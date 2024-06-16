@@ -5,4 +5,5 @@
     <!-- Shortcut Icons -->
     <color name="shortcutIconBackground">#26C484</color>
     <color name="shortcutIconForeground">#FFF</color>
+    <color name="premium_requests_progressbar">#FF5733</color>
 </resources>
