@@ -17,6 +17,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
@@ -357,7 +358,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             int accent = ColorHelper.getAttributeColor(mContext, com.google.android.material.R.attr.colorSecondary);
             button.setTextColor(ColorHelper.getTitleTextColor(primary));
 
-            premProgress.getProgressDrawable().setColorFilter(accent, PorterDuff.Mode.SRC_IN);
+            premProgress.getProgressDrawable().setColorFilter(ContextCompat.getColor(mContext, R.color.premium_requests_progressbar), PorterDuff.Mode.SRC_IN);
             regProgress.getProgressDrawable().setColorFilter(accent, PorterDuff.Mode.SRC_IN);
 
             button.setOnClickListener(this);
