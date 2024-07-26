@@ -1,9 +1,13 @@
 package candybar.lib.adapters;
 
 import static candybar.lib.items.Setting.Type.MATERIAL_YOU;
+import static candybar.lib.items.Setting.Type.NOTIFICATIONS;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -135,12 +140,22 @@ public class SettingsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 }
             }
 
-            if (setting.getType() == MATERIAL_YOU) {
+            if (setting.getType() == MATERIAL_YOU || setting.getType() == NOTIFICATIONS) {
                 contentViewHolder.materialSwitch.setVisibility(View.VISIBLE);
                 contentViewHolder.container.setClickable(false);
                 int pad = contentViewHolder.container.getPaddingLeft();
                 contentViewHolder.container.setPadding(pad, 0, pad, 0);
+            }
+
+            if (setting.getType() == MATERIAL_YOU) {
                 contentViewHolder.materialSwitch.setChecked(Preferences.get(mContext).isMaterialYou());
+            }
+
+            if (setting.getType() == NOTIFICATIONS) {
+                boolean isPermissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.O || NotificationManagerCompat.from(mContext).areNotificationsEnabled();
+                contentViewHolder.materialSwitch.setChecked(Preferences.get(mContext).isNotificationsEnabled() && isPermissionGranted);
+                int pad = contentViewHolder.container.getPaddingLeft();
+                contentViewHolder.container.setPadding(pad, pad, pad, 0);
             }
         }
     }
@@ -178,12 +193,31 @@ public class SettingsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
             container.setOnClickListener(this);
             materialSwitch.setOnCheckedChangeListener((compoundButton, isChecked) -> {
-                // No case required for now as the switch is only for
-                // material you
-                LogUtil.d("CHECK STATUS: " + isChecked);
-                if (isChecked != Preferences.get(mContext).isMaterialYou()) {
-                    Preferences.get(mContext).setMaterialYou(isChecked);
-                    ((Activity) mContext).recreate();
+                int position = getBindingAdapterPosition();
+                switch (mSettings.get(position).getType()) {
+                    case MATERIAL_YOU:
+                        if (isChecked != Preferences.get(mContext).isMaterialYou()) {
+                            Preferences.get(mContext).setMaterialYou(isChecked);
+                            ((Activity) mContext).recreate();
+                        }
+                        break;
+                    case NOTIFICATIONS:
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !NotificationManagerCompat.from(mContext).areNotificationsEnabled()) {
+                            materialSwitch.setChecked(false);
+                            Intent settingsIntent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    .putExtra(Settings.EXTRA_APP_PACKAGE, mContext.getPackageName());
+                            mContext.startActivity(settingsIntent);
+                            break;
+                        }
+                        if (isChecked != Preferences.get(mContext).isNotificationsEnabled()) {
+                            Preferences.get(mContext).setNotificationsEnabled(isChecked);
+                            CandyBarApplication.Configuration.NotificationHandler handler = CandyBarApplication.getConfiguration().getNotificationHandler();
+                            if (handler != null) {
+                                handler.setMode(isChecked);
+                            }
+                        }
+                        break;
                 }
             });
         }
@@ -369,7 +403,7 @@ public class SettingsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                                     put("action", "open_dialog");
                                 }}
                         );
-                        ChangelogFragment.showChangelog(((AppCompatActivity) mContext).getSupportFragmentManager());
+                        ChangelogFragment.showChangelog(((AppCompatActivity) mContext).getSupportFragmentManager(), () -> {});
                         break;
                     case RESET_TUTORIAL:
                         CandyBarApplication.getConfiguration().getAnalyticsHandler().logEvent(

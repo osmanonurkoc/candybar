@@ -179,8 +179,16 @@ public class SettingsFragment extends Fragment {
                     "", "", Setting.Type.THEME));
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                settings.add(new Setting(-1, "", "Material You", "", "", Setting.Type.MATERIAL_YOU));
+                settings.add(new Setting(-1, "", resources.getString(R.string.theme_name_material_you), "", "", Setting.Type.MATERIAL_YOU));
             }
+        }
+
+        if (CandyBarApplication.getConfiguration().isNotificationEnabled()) {
+            settings.add(new Setting(R.drawable.ic_toolbar_notifications,
+                    resources.getString(R.string.pref_notifications_header),
+                    "", "", "", Setting.Type.HEADER));
+
+            settings.add(new Setting(-1, "", resources.getString(R.string.pref_notifications), "", "", Setting.Type.NOTIFICATIONS));
         }
 
         settings.add(new Setting(R.drawable.ic_toolbar_language,
@@ -262,7 +270,8 @@ public class SettingsFragment extends Fragment {
                     for (Request request : requests) {
                         Drawable drawable = getPackageIcon(requireActivity(), request.getActivity());
                         String icon = IconsHelper.saveIcon(files, directory, drawable,
-                                isPacific ? request.getPackageName() : RequestHelper.fixNameForRequest(request.getName()));
+                                isPacific ? request.getPackageName() : RequestHelper.fixNameForRequest(request.getName()),
+                                request::setFileName);
                         if (icon != null) files.add(icon);
                         if (isCustom) {
                             request.setIconBase64(getReqIconBase64(drawable));
